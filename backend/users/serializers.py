@@ -1,116 +1,96 @@
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
-from django.db import IntegrityError
-from django.forms import ValidationError
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from rest_framework.relations import SlugRelatedField
-from rest_framework.validators import UniqueTogetherValidator
 
-from .models import (
-    User,
-    Subscription
-)
-
-from .validators import (
-    validate_bad_username,
-    validate_email,
-    validate_restricted_username,
-)
+from recipes.serializers import RecipeShortSerializer
+from users.models import Subscription, User
 
 
-class AdminSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = '__all__'
+class CustomUserSerializer(UserSerializer):
+    """Кастомный сериализатор для модели User."""
 
-
-class SignUpSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        max_length=150,
-        validators=[
-            validate_bad_username,
-            validate_restricted_username,
-            validate_email,
-        ],
-    )
-    email = serializers.EmailField(max_length=254)
-
-    def create(self, validated_data):
-        try:
-            user = User.objects.get_or_create(**validated_data)[0]
-        except IntegrityError:
-            raise serializers.ValidationError(
-                'Имя пользователя или email уже существуют.'
-            )
-        return user
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = User
-        fields = ('email', 'username')
-
-
-class TokenSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    confirmation_code = serializers.CharField()
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = (
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "bio",
-            "role",
-        )
-
-
-class UserInfoSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = (
-            "username",
-            "email",
-            "first_name",
-            "last_name",
-            "bio",
-            "role",
-        )
-        model = User
-        read_only_fields = ("role",)
-
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели Subscription."""
-
-    user = serializers.SlugRelatedField(
-        read_only=True,
-        slug_field='username',
-        default=serializers.CurrentUserDefault()
-    )
-    following = serializers.SlugRelatedField(
-        queryset=User.objects.all(),
-        slug_field='username'
-    )
-
-    class Meta:
-        fields = ('user', 'following')
-        model = Subscription
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Subscription.objects.all(),
-                fields=('user', 'following'),
-                message='На этого автора вы уже подписаны!'
-            ),
+        fields = [
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed'
         ]
+        model = User
 
-    def validate_subscription(self, value):
-        """Проверка, что пользователь не подписывается на себя."""
+    def get_is_subscribed(self, obj):
+        """Отметка подписан ли текущий пользователь на автора."""
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Subscription.objects.filter(user=user, following=obj).exists()
 
-        if value == self.context['request'].user:
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    """Кастомный сериализатор для создания Пользователя."""
+
+    password = serializers.CharField(
+        max_length=150, min_length=8, write_only=True)
+
+    class Meta:
+        fields = '__all__'
+        model = User
+
+    def validate(self, data):
+        """Валидация имени и электронной почты нового пользователя."""
+        if User.objects.filter(username=data.get('username')):
             raise serializers.ValidationError(
-                'Нельзя подписаться на самого себя!'
+                'Пользователь с таким именем уже существует!'
             )
-        return value
+        if User.objects.filter(email=data.get('email')):
+            raise serializers.ValidationError(
+                'Пользователь с такой электронной почтой уже существует!'
+            )
+        return data
+
+
+class SubscriptionSerializer(CustomUserSerializer):
+    """Сериализатор для модели Подписки."""
+
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
+
+    def get_recipes(self, object):
+        """
+        Получение рецептов автора,
+        на которого подписан текущий пользователь.
+        """
+        author_recipes = object.recipes.all()[:6]
+        return RecipeShortSerializer(
+            author_recipes, many=True
+        ).data
+
+    def get_recipes_count(self, object):
+        """
+        Получение количества рецептов автора,
+        на которого подписан текущий пользователь.
+        """
+        return object.recipes.count()
+
+    def get_is_subscribed(self, obj):
+        """Отметка подписан ли текущий пользователь на автора."""
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Subscription.objects.filter(user=user, following=obj).exists()

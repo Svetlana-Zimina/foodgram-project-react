@@ -5,8 +5,6 @@ from recipes.views import (
     RecipeViewSet,
     IngredientViewSet,
     TagViewSet,
-    FavoriteViewSet,
-
 )
 
 v1_router = DefaultRouter()
@@ -17,11 +15,6 @@ v1_router.register(
     basename='ingredient'
 )
 v1_router.register('tags', TagViewSet, basename='tag')
-v1_router.register(
-    r'recipes/(?P<recipe_id>\d+)/favorite',
-    FavoriteViewSet,
-    basename='favorite'
-)
 
 urlpatterns = [
     path('', include(v1_router.urls)),
