@@ -1,8 +1,6 @@
-from django.contrib.auth import get_user_model
 from django.core import validators
 from django.db import models
-
-User = get_user_model()
+from users.models import User
 
 
 class Ingredient(models.Model):
@@ -76,12 +74,14 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientRecipe',
+        related_name='recipes',
         verbose_name='Ингредиенты',
         help_text="Выберите ингредиенты."
     )
     tags = models.ManyToManyField(
         Tag,
         through='TagRecipe',
+        related_name='recipes',
         verbose_name='Тэги',
         help_text="Выберите один или несколько тэгов."
     )
@@ -95,6 +95,8 @@ class Recipe(models.Model):
         auto_now_add=True,
         verbose_name='Дата публикации рецепта'
     )
+    is_favorited = models.BooleanField()
+    is_in_shopping_cart = models.BooleanField()
 
     class Meta:
         ordering = ('-pub_date', )
@@ -106,15 +108,16 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
+    """Промежуточная модель Ингридиент - Рецепт."""
+
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name='ingredient'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='recipe'
+        related_name='recipe_ingridients'
     )
     amount = models.PositiveSmallIntegerField()
 
@@ -130,13 +133,16 @@ class IngredientRecipe(models.Model):
 
 
 class TagRecipe(models.Model):
+    """Промежуточная модель Тэг - Рецепт."""
+
     tag = models.ForeignKey(
         Tag,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='recipe_tags'
     )
 
     def __str__(self):
@@ -144,16 +150,18 @@ class TagRecipe(models.Model):
 
 
 class Favorite(models.Model):
+    """Модель Избранное."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='favorite',
+        related_name='favorites',
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorite_recipe',
+        related_name='favorites',
         verbose_name='Избранный рецепт'
     )
 
@@ -169,6 +177,8 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель Список покупок."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -178,18 +188,16 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='in_cart',
+        related_name='shopping_cart',
         verbose_name='Рецепт'
     )
 
     class Meta:
         verbose_name = 'Cписок покупок'
         verbose_name_plural = 'Списки покупок'
-        
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
                 name='unique_shopping_cart'
             ),
         )
-

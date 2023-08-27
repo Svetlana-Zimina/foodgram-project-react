@@ -1,8 +1,8 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
-from recipes.serializers import RecipeShortSerializer
-from users.models import Subscription, User
+from .models import Subscription, User
+from recipes.models import Recipe
 
 
 class CustomUserSerializer(UserSerializer):
@@ -11,6 +11,7 @@ class CustomUserSerializer(UserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
+        model = User
         fields = [
             'email',
             'id',
@@ -19,14 +20,13 @@ class CustomUserSerializer(UserSerializer):
             'last_name',
             'is_subscribed'
         ]
-        model = User
 
     def get_is_subscribed(self, obj):
         """Отметка подписан ли текущий пользователь на автора."""
-        user = self.context.get('request').user
-        if user.is_anonymous:
+        request = self.context.get('request')
+        if request is None or request.user.is_anonymous:
             return False
-        return Subscription.objects.filter(user=user, following=obj).exists()
+        return obj.following.filter(user=request.user).exists()
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -36,8 +36,8 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         max_length=150, min_length=8, write_only=True)
 
     class Meta:
-        fields = '__all__'
         model = User
+        fields = '__all__'
 
     def validate(self, data):
         """Валидация имени и электронной почты нового пользователя."""
@@ -50,6 +50,19 @@ class CustomUserCreateSerializer(UserCreateSerializer):
                 'Пользователь с такой электронной почтой уже существует!'
             )
         return data
+
+
+class RecipeShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения информации о рецепте в подписке."""
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
 
 
 class SubscriptionSerializer(CustomUserSerializer):
@@ -71,22 +84,22 @@ class SubscriptionSerializer(CustomUserSerializer):
             'recipes_count'
         )
 
-    def get_recipes(self, object):
+    def get_recipes(self, obj):
         """
         Получение рецептов автора,
         на которого подписан текущий пользователь.
         """
-        author_recipes = object.recipes.all()[:6]
+        author_recipes = obj.recipes.all()
         return RecipeShortSerializer(
             author_recipes, many=True
         ).data
 
-    def get_recipes_count(self, object):
+    def get_recipes_count(self, obj):
         """
         Получение количества рецептов автора,
         на которого подписан текущий пользователь.
         """
-        return object.recipes.count()
+        return obj.recipes.count()
 
     def get_is_subscribed(self, obj):
         """Отметка подписан ли текущий пользователь на автора."""

@@ -1,50 +1,65 @@
-from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 from django.http import HttpResponse
-from rest_framework import filters, permissions, viewsets, exceptions, status, viewsets
-from rest_framework.pagination import LimitOffsetPagination
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import (
+    exceptions,
+    filters,
+    permissions,
+    status,
+    viewsets
+)
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
-from recipes.models import (
-    Recipe,
-    Ingredient,
-    Tag,
+
+from .models import (
     Favorite,
+    Ingredient,
+    IngredientRecipe,
+    Recipe,
     ShoppingCart,
-    IngredientRecipe
+    Tag
 )
-#from .permissions import IsAuthorOrReadOnly
+from .permissions import AuthorAdminOrReadOnly, IsAuthorPermission
 from .serializers import (
-    RecipeSerializer,
-    RecipeListSerializer,
     IngredientSerializer,
-    TagSerializer,
-    FavoriteSerializer,
-    ShoppingCartSerializer
+    RecipeListSerializer,
+    RecipeSerializer,
+    TagSerializer
 )
+from users.serializers import RecipeShortSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """Представление для модели Recipe."""
+    """Представление для модели Recipe.
+    Получение списка рецептов/рецепта.
+    Добавление/удаление рецепта из избранного.
+    Добавление/удаление рецепта в список покупок.
+    """
 
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
-    #permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (AuthorAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = (
+        'is_favorited',
+        'is_in_shopping_cart',
+        'author',
+        'tags'
+    )
 
     def get_serializer_class(self):
         """Выбор сериализатора."""
-
         if self.action in ('list', 'retrieve'):
             return RecipeListSerializer
         return RecipeSerializer
 
-    def perform_create(self, serializer):
-        """Автоматическое указание автора при создании рецепта."""
-
-        serializer.save(author=self.request.user)
-    
-    @action(detail=True, methods=('post', 'delete'))
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+        permission_classes=(IsAuthorPermission, )
+    )
     def favorite(self, request, pk=None):
         """Добавление/удаление рецепта в избранное."""
 
@@ -58,7 +73,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             ).exists():
                 raise exceptions.ValidationError('Рецепт уже в избранном.')
             Favorite.objects.create(user=user, recipe=recipe)
-            serializer = FavoriteSerializer(
+            serializer = RecipeShortSerializer(
                 recipe,
                 context={'request': request}
             )
@@ -78,7 +93,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(detail=True, methods=('post', 'delete'))
+    @action(
+        detail=True,
+        methods=('post', 'delete'),
+        permission_classes=(IsAuthorPermission, )
+    )
     def shopping_cart(self, request, pk=None):
         """Добавление/удаление рецепта в список покупок."""
 
@@ -94,7 +113,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     'Рецепт уже в списке покупок.'
                 )
             ShoppingCart.objects.create(user=user, recipe=recipe)
-            serializer = ShoppingCartSerializer(
+            serializer = RecipeShortSerializer(
                 recipe,
                 context={'request': request}
             )
@@ -122,7 +141,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=False,
         methods=('get',),
-        #permission_classes=(IsAuthenticated,)
+        permission_classes=(IsAuthorPermission, )
     )
     def download_shopping_cart(self, request):
         """Скачать список покупок."""
@@ -158,6 +177,10 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    permission_classes = (permissions.AllowAny, )
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
+    pagination_class = None
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -165,3 +188,5 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    permission_classes = (permissions.AllowAny, )
+    pagination_class = None

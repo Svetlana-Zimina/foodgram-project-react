@@ -1,20 +1,17 @@
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from recipes.permissions import IsAuthorPermission
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly
 )
 from rest_framework.response import Response
 
-from recipes.permissions import IsAuthorPermission
-
 from .models import Subscription, User
-from .serializers import (
-    CustomUserSerializer,
-    SubscriptionSerializer
-)
+from .serializers import CustomUserSerializer, SubscriptionSerializer
 
 
 class CustomUserViewSet(UserViewSet):
@@ -23,13 +20,14 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = LimitOffsetPagination
 
     @action(
         detail=False,
         methods=['get', ],
         permission_classes=(IsAuthenticated,)
     )
-    def get_me(self, request):
+    def me(self, request):
         """Получение информации о текущем пользователе."""
         serializer = CustomUserSerializer(
             request.user,

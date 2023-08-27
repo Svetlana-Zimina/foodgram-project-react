@@ -4,8 +4,8 @@ from .models import Subscription, User
 
 
 class UserAdmin(admin.ModelAdmin):
-    """Настройки модели Пользователя.
-    Для отображения в панели администратора"""
+    """Настройки модели Пользователя
+    lля отображения в панели администратора"""
 
     list_display = (
         'email',
@@ -20,8 +20,8 @@ class UserAdmin(admin.ModelAdmin):
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
-    """Настройки модели Подписки.
-    Для отображения в панели администратора"""
+    """Настройки модели Подписки
+    lля отображения в панели администратора"""
 
     list_display = (
         'user',
