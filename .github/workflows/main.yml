@@ -112,7 +112,6 @@ jobs:
 
     - name: Copy docker-compose.yml via ssh
       uses: appleboy/scp-action@master
-    
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
@@ -130,12 +129,9 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
           cd foodgram
-          # Выполняет pull образов с Docker Hub
           sudo docker compose -f docker-compose.production.yml pull
-          # Перезапускает все контейнеры в Docker Compose
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
-          # Выполняет миграции и сбор статики
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
           sudo docker system prune -a
