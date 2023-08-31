@@ -16,27 +16,27 @@ services:
     image: svetazimina/foodgram_backend
     env_file: .env
     volumes:
-      - static:/app/backend_static/
-      - media:/app/media/
+      - static:/backend_static
+      - media:/media
     depends_on:
       - db
 
   frontend:
+    env_file: .env
     image: svetazimina/foodgram_frontend
+    command: cp -r /app/build/. /frontend_static/
     volumes:
-      - ../frontend/:/app/result_build/
+      - static:/frontend_static
       
   gateway:
-    image: svetazimina/foodgram_gateway
-    env_file: .env
+    image: nginx:1.19.3
     ports:
       - 8000:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
-      - static:/var/html/static/
-      - media:/var/html/media/
+      - static:/staticfiles
+      - media:/media
     depends_on:
       - backend
-      - frontend
