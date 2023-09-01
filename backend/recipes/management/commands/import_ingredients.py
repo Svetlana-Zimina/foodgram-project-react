@@ -11,7 +11,7 @@ def import_data():
         f'{CSV_DIR}/ingredients.csv',
         encoding='utf-8'
     ) as csvfile:
-        reader = csv.reader(csvfile)
+        reader = csv.DictReader(csvfile)
         next(reader)
         ingredients = [
             Ingredient(
