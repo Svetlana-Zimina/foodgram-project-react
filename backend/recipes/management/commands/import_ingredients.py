@@ -11,18 +11,22 @@ def import_data():
         f'{CSV_DIR}/ingredients.csv',
         encoding='utf-8'
     ) as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            Ingredient.objects.create(
+        reader = csv.reader(csvfile)
+        next(reader)
+        ingredients = [
+            Ingredient(
                 name=row[0],
                 measurement_unit=row[1],
             )
+            for row in reader
+        ]
+        Ingredient.objects.bulk_create(ingredients)
 
 
 class Command(BaseCommand):
     help = 'Импорт ингридиентов в базу данных'
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **kwargs):
         import_data()
         self.stdout.write(
             self.style.SUCCESS('Ингридиенты успешно загружены в базу')
