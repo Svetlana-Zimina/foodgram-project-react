@@ -150,4 +150,4 @@ DJOSER = {
     },
 }
 
-CSV_DIR = BASE_DIR / '/data'
+CSV_DIR = os.path.join(BASE_DIR, 'data')
