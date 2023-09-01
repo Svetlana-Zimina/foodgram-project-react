@@ -14,8 +14,8 @@ def import_data():
         reader = csv.DictReader(csvfile)
         for row in reader:
             Ingredient.objects.create(
-                name=row['name'],
-                measurement_unit=row['measurement_unit'],
+                name=row['название'],
+                measurement_unit=row['единица измерения'],
             )
 
 
