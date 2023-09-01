@@ -18,6 +18,7 @@ isort==5.12.0
 Markdown==3.4.4
 mccabe==0.7.0
 oauthlib==3.2.2
+pathlib==1.0.1
 Pillow==10.0.0
 postgres==4.0
 psycopg2-binary==2.9.7
