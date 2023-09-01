@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import exceptions, filters, permissions, status, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.serializers import RecipeShortSerializer
@@ -23,6 +24,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     queryset = Recipe.objects.all()
     permission_classes = (AuthorAdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination 
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = (
         'is_favorited',

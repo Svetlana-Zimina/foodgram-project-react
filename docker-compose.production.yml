@@ -4,8 +4,7 @@ volumes:
   pg_data:
   static:
   media:
-  api_docs:
-
+  
 services:
   db:
     image: postgres:14
@@ -19,7 +18,6 @@ services:
     volumes:
       - static:/backend_static
       - media:/media
-      - api_docs:/docs
     depends_on:
       - db
 
@@ -36,8 +34,9 @@ services:
     ports:
       - 8000:80
     volumes:
+      - ./frontend/build:/usr/share/nginx/html/
+      - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/staticfiles
       - media:/media
-      - api_docs:/docs
     depends_on:
       - backend
