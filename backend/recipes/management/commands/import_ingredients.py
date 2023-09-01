@@ -1,16 +1,13 @@
 import csv
-import pathlib
-from pathlib import Path
 
 from django.core.management.base import BaseCommand
+from foodgram_backend.settings import CSV_DIR
 from recipes.models import Ingredient
-
-path = Path(pathlib.Path.home(), 'data', 'ingredients.csv')
 
 
 def import_data():
     """Чтение файла CSV и создания экземпляров модели"""
-    with open(path) as csvfile:
+    with open(f'{CSV_DIR}/ingredients.csv') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             Ingredient.objects.create(

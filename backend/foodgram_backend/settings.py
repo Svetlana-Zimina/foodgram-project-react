@@ -149,3 +149,5 @@ DJOSER = {
         ],
     },
 }
+
+CSV_DIR = BASE_DIR / '/data'
