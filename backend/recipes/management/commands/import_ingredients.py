@@ -7,12 +7,15 @@ from recipes.models import Ingredient
 
 def import_data():
     """Чтение файла CSV и создания экземпляров модели"""
-    with open(f'{CSV_DIR}/ingredients.csv') as csvfile:
+    with open(
+        f'{CSV_DIR}/ingredients.csv',
+        encoding='utf-8'
+    ) as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             Ingredient.objects.create(
-                field1=row['name'],
-                field2=row['measurement_unit'],
+                name=row[0],
+                measurement_unit=row[1],
             )
 
 
