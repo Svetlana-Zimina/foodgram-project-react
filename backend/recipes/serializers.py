@@ -225,3 +225,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
 
         return super().update(instance, validated_data)
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return RecipeListSerializer(instance, context=context).data
