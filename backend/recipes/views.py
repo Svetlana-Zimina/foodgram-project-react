@@ -2,21 +2,24 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import exceptions, filters, permissions, status, viewsets
+from rest_framework import exceptions, filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from users.serializers import RecipeShortSerializer
 
+from .filters import RecipeFilter
 from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                      ShoppingCart, Tag)
-from .permissions import AuthorAdminOrReadOnly, IsAuthorPermission
+from .permissions import (AdminOrReadOnly, AuthorAdminOrReadOnly,
+                          IsAuthorPermission)
 from .serializers import (IngredientSerializer, RecipeListSerializer,
                           RecipeSerializer, TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Представление для модели Recipe.
+
     Получение списка рецептов/рецепта.
     Добавление/удаление рецепта из избранного.
     Добавление/удаление рецепта в список покупок.
@@ -26,12 +29,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (AuthorAdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_fields = (
-        'is_favorited',
-        'is_in_shopping_cart',
-        'author',
-        'tags'
-    )
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         """Выбор сериализатора."""
@@ -46,7 +44,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def favorite(self, request, pk=None):
         """Добавление/удаление рецепта в избранное."""
-
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
 
@@ -84,7 +81,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, pk=None):
         """Добавление/удаление рецепта в список покупок."""
-
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
 
@@ -129,7 +125,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         """Скачать список покупок."""
-
         shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
         recipes = [item.recipe.id for item in shopping_cart]
         shopping_list = IngredientRecipe.objects.filter(
@@ -161,7 +156,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (AdminOrReadOnly, )
     filter_backends = (filters.SearchFilter,)
     search_fields = ('^name',)
     pagination_class = None
@@ -172,5 +167,5 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (AdminOrReadOnly, )
     pagination_class = None
