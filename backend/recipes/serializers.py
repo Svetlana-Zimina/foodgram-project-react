@@ -41,9 +41,15 @@ class TagSerializer(serializers.ModelSerializer):
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения ингридиентов в рецепте/списке рецептов."""
 
-    id = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
-    measurement_unit = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField(
+        method_name='get_id'
+    )
+    name = serializers.SerializerMethodField(
+        method_name='get_name'
+    )
+    measurement_unit = serializers.SerializerMethodField(
+        method_name='get_measurement_unit'
+    )
 
     def get_id(self, obj):
         """Получение id ингридиента."""
@@ -83,10 +89,16 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
-    tags = TagSerializer(many=True, read_only=True)
-    ingredients = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField(read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    tags = TagSerializer(many=True)
+    ingredients = serializers.SerializerMethodField(
+        method_name='get_ingredients'
+    )
+    is_favorited = serializers.SerializerMethodField(
+        method_name='get_is_favorited'
+    )
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        method_name='get_is_in_shopping_cart'
+    )
 
     class Meta:
         model = Recipe
@@ -105,13 +117,13 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     def get_ingredients(self, obj):
         """Получение информации об ингридиентах рецепта."""
-        ingredients = obj.ingredients.values(
-            'id',
-            'name',
-            'measurement_unit',
-            amount=F('ingredientrecipe__amount')
+        ingredients = IngredientRecipe.objects.filter(
+            recipe=obj
         )
-        return ingredients
+        serializer = IngredientRecipeSerializer(
+            ingredients, many=True
+        )
+        return serializer.data
 
     def get_is_favorited(self, obj):
         """Получение информации находится ли рецепт в избранном."""
