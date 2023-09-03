@@ -132,10 +132,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для создания/редактирования/удаления рецепта."""
 
-    author = CustomUserSerializer(
-        read_only=True,
-        default=serializers.CurrentUserDefault()
-    )
+    author = CustomUserSerializer(read_only=True,)
     image = Base64ImageField()
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
@@ -159,28 +156,23 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate_ingredients(self, value):
         """Валидация поля ingredients."""
         if not value:
-            raise ValidationError({
-                'ingredients': 'Необходимо добавить ингрдиенты!'
-            })
+            raise ValidationError(
+                'Необходимо добавить ингридиенты!'
+            )
         ingredients_list = []
         for item in value:
             ingredient = get_object_or_404(Ingredient, id=item['id'])
             if ingredient in ingredients_list:
-                raise ValidationError({
-                    'ingredients': 'Ингридиенты не могут повторяться!'
-                })
+                raise ValidationError(
+                    'Ингридиенты не могут повторяться!'
+                )
             ingredients_list.append(ingredient)
         return value
 
     def validate_tags(self, value):
         """Валидация поля tags."""
         if not value:
-            raise ValidationError({'tags': 'Необходимо добавить тег!'})
-        tags_list = []
-        for tag in value:
-            if tag in tags_list:
-                raise ValidationError({'tags': 'Теги не могуть повторяться!'})
-            tags_list.append(tag)
+            raise ValidationError('Необходимо добавить тег!')
         return value
 
     def create(self, validated_data):
@@ -227,6 +219,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        request = self.context.get('request')
-        context = {'request': request}
-        return RecipeListSerializer(instance, context=context).data
+        serializer = RecipeListSerializer(
+            instance,
+            context={'request': self.context.get('request')}
+        )
+
+        return serializer.data
