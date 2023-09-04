@@ -2,7 +2,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import exceptions, filters, status, viewsets
+from rest_framework import exceptions, filters, status, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.serializers import RecipeShortSerializer
@@ -11,8 +11,7 @@ from .filters import RecipeFilter
 from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
                      ShoppingCart, Tag)
 from .pagination import CustomPagination
-from .permissions import (AdminOrReadOnly, AuthorAdminOrReadOnly,
-                          IsAuthorPermission)
+from .permissions import (AdminOrReadOnly, IsAuthorPermission)
 from .serializers import (IngredientSerializer, RecipeListSerializer,
                           RecipeSerializer, TagSerializer)
 
@@ -26,7 +25,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Recipe.objects.all()
-    permission_classes = (AuthorAdminOrReadOnly,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = CustomPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
