@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from recipes.pagination import CustomPagination
 from recipes.permissions import IsAuthorPermission
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
@@ -16,6 +17,7 @@ class CustomUserViewSet(UserViewSet):
 
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    pagination_class = CustomPagination
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @action(
