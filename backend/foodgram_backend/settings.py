@@ -11,8 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
-#DEBUG = os.getenv('DEBUG', False) == True
-DEBUG = True
+DEBUG = os.getenv('DEBUG', False) == True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
@@ -135,9 +134,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 6,
-
+    'DEFAULT_PAGINATION_CLASS': 'recipe.pagination.CustomPagination'
 }
 
 # Djoser settings

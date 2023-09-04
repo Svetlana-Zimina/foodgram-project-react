@@ -3,7 +3,6 @@ from djoser.views import UserViewSet
 from recipes.permissions import IsAuthorPermission
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
@@ -18,8 +17,7 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-    pagination_class = LimitOffsetPagination
-
+    
     @action(
         detail=False,
         methods=['get', ],

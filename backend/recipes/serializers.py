@@ -40,15 +40,9 @@ class TagSerializer(serializers.ModelSerializer):
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения ингридиентов в рецепте/списке рецептов."""
 
-    id = serializers.SerializerMethodField(
-        method_name='get_id'
-    )
-    name = serializers.SerializerMethodField(
-        method_name='get_name'
-    )
-    measurement_unit = serializers.SerializerMethodField(
-        method_name='get_measurement_unit'
-    )
+    id = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    measurement_unit = serializers.SerializerMethodField()
 
     def get_id(self, obj):
         """Получение id ингридиента."""
@@ -89,15 +83,9 @@ class RecipeListSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     image = Base64ImageField()
     tags = TagSerializer(many=True)
-    ingredients = serializers.SerializerMethodField(
-        method_name='get_ingredients'
-    )
-    is_favorited = serializers.SerializerMethodField(
-        method_name='get_is_favorited'
-    )
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        method_name='get_is_in_shopping_cart'
-    )
+    ingredients = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
