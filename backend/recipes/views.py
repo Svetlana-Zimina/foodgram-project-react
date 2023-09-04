@@ -5,7 +5,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import exceptions, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from users.serializers import RecipeShortSerializer
 
 from .filters import IngredientFilter, RecipeFilter

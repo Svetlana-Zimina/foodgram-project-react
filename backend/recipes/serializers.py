@@ -4,7 +4,6 @@ from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-
 from users.serializers import CustomUserSerializer
 
 from .models import (Favorite, Ingredient, IngredientRecipe, Recipe,
