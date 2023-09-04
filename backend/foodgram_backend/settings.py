@@ -148,6 +148,3 @@ DJOSER = {
 }
 
 CSV_DIR = os.path.join(BASE_DIR, 'data')
-
-API_DOCS_URL = '/api/docs/'
-API_DOCS_ROOT = BASE_DIR / '/docs'

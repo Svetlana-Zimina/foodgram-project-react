@@ -99,6 +99,11 @@ class Recipe(models.Model):
     is_in_shopping_cart = models.BooleanField(default=False)
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'name'],
+                name='unique recipe name'
+            )]
         ordering = ('-pub_date', )
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
