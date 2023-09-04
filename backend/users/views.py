@@ -4,8 +4,7 @@ from recipes.pagination import CustomPagination
 from recipes.permissions import IsAuthorPermission
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Subscription, User
@@ -18,8 +17,7 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = CustomPagination
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-
+    
     @action(
         detail=False,
         methods=['get', ],
