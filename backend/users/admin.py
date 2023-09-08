@@ -1,9 +1,10 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import Subscription, User
 
 
-class UserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(UserAdmin):
     """Настройки модели Пользователя
     lля отображения в панели администратора"""
 
@@ -32,5 +33,5 @@ class SubscriptionAdmin(admin.ModelAdmin):
         ordering = ('user', )
 
 
-admin.site.register(User, UserAdmin)
+admin.site.register(User, CustomUserAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)

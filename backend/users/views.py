@@ -1,14 +1,15 @@
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from recipes.pagination import CustomPagination
-from recipes.permissions import IsAuthorPermission
-from rest_framework import exceptions, status
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from recipes.pagination import CustomPagination
+from recipes.permissions import IsAuthorPermission
 from .models import Subscription, User
-from .serializers import CustomUserSerializer, SubscriptionSerializer
+from .serializers import (CustomUserSerializer, SubscriptionCreateSerializer,
+                          SubscriptionSerializer)
 
 
 class CustomUserViewSet(UserViewSet):
@@ -20,19 +21,6 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=['get', ],
-        permission_classes=(IsAuthenticated,)
-    )
-    def me(self, request):
-        """Получение информации о текущем пользователе."""
-        serializer = CustomUserSerializer(
-            request.user,
-            context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    @action(
-        detail=False,
         methods=('get',),
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthorPermission, )
@@ -40,53 +28,59 @@ class CustomUserViewSet(UserViewSet):
     def subscriptions(self, request):
         """Получение всех подписок текущего пользователя."""
         user = self.request.user
+        queryset = User.objects.filter(following__user=user)
+        paginator = self.paginate_queryset(queryset)
+        serializer = SubscriptionSerializer(
+            paginator,
+            many=True,
+            context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)
 
-        def queryset():
-            return User.objects.filter(following__user=user)
-
-        self.get_queryset = queryset
-        return self.list(request)
+    @staticmethod
+    def custom_create(serializer_create, serializer_show, pk, request):
+        following = get_object_or_404(User, id=pk)
+        data = {'user': request.user.id, 'following': following.id}
+        serializer = serializer_create(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            serializer_show = serializer_show(
+                following, context={'request': request}
+            )
+            return Response(
+                serializer_show.data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=True,
-        methods=('post', 'delete'),
-        serializer_class=SubscriptionSerializer,
-        permission_classes=(IsAuthenticated, )
+        methods=('post',),
+        permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, id=None):
         """Подписка/отписка от автора."""
-        user = self.request.user
+        return self.custom_create(
+            SubscriptionCreateSerializer,
+            SubscriptionSerializer,
+            id,
+            request
+        )
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id=None):
+        """Удаление рецепта из избранного."""
         following = get_object_or_404(User, id=id)
-
-        if self.request.method == 'POST':
-            if Subscription.objects.filter(
-                user=user,
+        if Subscription.objects.filter(
+            user=request.user,
+            following=following
+        ).exists():
+            Subscription.objects.filter(
+                user=request.user,
                 following=following
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Вы уже подписаны на этого автора!'
-                )
-            Subscription.objects.create(user=user, following=following)
-            serializer = SubscriptionSerializer(
-                following,
-                context={'request': request}
-            )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        if self.request.method == 'DELETE':
-            if not Subscription.objects.filter(
-                user=user,
-                following=following
-            ).exists():
-                raise exceptions.ValidationError(
-                    'Невозможно удалить то, чего нет.'
-                )
-            subscription = get_object_or_404(
-                Subscription,
-                user=user,
-                following=following
-            )
-            subscription.delete()
+            ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            {'error': 'Вы не подписаны на этого пользователя'},
+            status=status.HTTP_400_BAD_REQUEST
+        )

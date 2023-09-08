@@ -1,36 +1,40 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django.db.models import F, Q
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
+
+from foodgram_backend import constants
+from .validators import validate_username_me
 
 
 class User(AbstractUser):
     """Кастомная модель Пользователя."""
 
     email = models.EmailField(
+        max_length=constants.MAX_LENGTH_3,
         unique=True,
         verbose_name='Адрес электронной почты'
     )
     username = models.CharField(
-        max_length=150,
+        max_length=constants.MAX_LENGTH_4,
         unique=True,
         verbose_name='Имя пользователя',
-        validators=[RegexValidator(
-            regex=r'^[\w.@+-]+$',
-            message='Имя пользователя содержит недопустимый символ!'
-        )]
+        validators=[
+            UnicodeUsernameValidator(),
+            validate_username_me
+        ],
     )
     first_name = models.CharField(
-        max_length=150,
+        max_length=constants.MAX_LENGTH_4,
         verbose_name='Имя'
     )
     last_name = models.CharField(
-        max_length=150,
+        max_length=constants.MAX_LENGTH_4,
         verbose_name='Фамилия'
     )
     password = models.CharField(
-        max_length=150,
+        max_length=constants.MAX_LENGTH_4,
         verbose_name='Пароль'
     )
 
@@ -63,6 +67,7 @@ class Subscription(models.Model):
     )
 
     class Meta:
+        ordering = ('user',)
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
         constraints = [

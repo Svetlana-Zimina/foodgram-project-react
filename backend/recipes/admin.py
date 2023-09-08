@@ -1,12 +1,54 @@
 from django.contrib import admin
+from django.contrib.auth.models import Group
+from rest_framework.authtoken.models import TokenProxy
 
 from .models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+
+
+class IngredientAdmin(admin.ModelAdmin):
+    """Настройки модели Ингридиент
+    для отображения в панели администратора"""
+
+    list_display = (
+        'id',
+        'name',
+        'measurement_unit'
+    )
+    list_filter = ('name', )
+    search_fields = ('name',)
+
+    class Meta:
+        ordering = ('name', )
+
+
+class TagAdmin(admin.ModelAdmin):
+    """Настройки модели Тэг
+    для отображения в панели администратора"""
+
+    list_display = (
+        'id',
+        'name',
+        'slug'
+    )
+
+
+class IngredientRecipeInline(admin.TabularInline):
+    model = Recipe.ingredients.through
+    min_num = 1
+
+
+class TagRecipeInline(admin.TabularInline):
+    model = Recipe.tags.through
+    min_num = 1
 
 
 class RecipeAdmin(admin.ModelAdmin):
     """Настройки модели Рецепт
     для отображения в панели администратора"""
-
+    inlines = [
+        IngredientRecipeInline,
+        TagRecipeInline,
+    ]
     list_display = (
         'name',
         'author',
@@ -36,33 +78,6 @@ class RecipeAdmin(admin.ModelAdmin):
     def count_favorite(self, obj):
         """Показывает сколько раз рецепт добавлен в избранное."""
         return obj.favorites.count()
-
-
-class IngredientAdmin(admin.ModelAdmin):
-    """Настройки модели Ингридиент
-    для отображения в панели администратора"""
-
-    list_display = (
-        'id',
-        'name',
-        'measurement_unit'
-    )
-    list_filter = ('name', )
-    search_fields = ('name',)
-
-    class Meta:
-        ordering = ('name', )
-
-
-class TagAdmin(admin.ModelAdmin):
-    """Настройки модели Тэг
-    для отображения в панели администратора"""
-
-    list_display = (
-        'id',
-        'name',
-        'slug'
-    )
 
 
 class FavoriteAdmin(admin.ModelAdmin):
@@ -98,3 +113,5 @@ admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(ShoppingCart, ShoppingCartAdmin)
+admin.site.unregister(Group)
+admin.site.unregister(TokenProxy)
