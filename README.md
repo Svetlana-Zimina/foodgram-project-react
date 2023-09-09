@@ -34,7 +34,7 @@ Docker
 
 # Склонируйте репозиторий:
 
-git clone <название репозитория>
+git clone git@github.com:Svetlana-Zimina/foodgram-project-react.git
 
 # Создайте и активируйте виртуальное окружение:
 Команда для установки виртуального окружения на Mac или Linux:

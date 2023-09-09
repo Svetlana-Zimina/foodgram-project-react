@@ -41,21 +41,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    # FavoriteSerializer/ShoppingCartSerializer основаны на моделях
+    # Favorite/ ShoppingCart,
+    # RecipeShortSerializer основан на модели Recipe - для отображения
+    # рецептов в избранном/ списке покупок согласно документации
     @staticmethod
     def custom_create(serializer_create, serializer_show, pk, request):
         recipe = get_object_or_404(Recipe, id=pk)
         data = {'user': request.user.id, 'recipe': recipe.id}
         serializer = serializer_create(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            serializer_show = serializer_show(
-                recipe, context={'request': request}
-            )
-            return Response(
-                serializer_show.data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer = serializer_show(
+            recipe, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=True,
@@ -75,13 +75,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def delete_favorite(self, request, pk):
         """Удаление рецепта из избранного."""
         recipe = get_object_or_404(Recipe, id=pk)
-        if Favorite.objects.filter(user=request.user, recipe=recipe).exists():
-            Favorite.objects.filter(user=request.user, recipe=recipe).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'error': 'Этого рецепта нет в избранном'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        delete_cnt, _ = Favorite.objects.filter(
+            user=request.user,
+            recipe=recipe
+        ).delete()
+        if not delete_cnt:
+            return Response(
+                {'ValidationError': 'Этого рецепта нет в избранном'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -93,25 +96,39 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.custom_create(
             ShoppingCartSerializer,
             RecipeShortSerializer,
-            pk, request
+            pk,
+            request
         )
 
     @shopping_cart.mapping.delete
     def delete_shopping_cart(self, request, pk):
         """Удаление рецепта из из списка покупок."""
         recipe = get_object_or_404(Recipe, id=pk)
-        if ShoppingCart.objects.filter(
+        delete_cnt, _ = ShoppingCart.objects.filter(
             user=request.user,
             recipe=recipe
-        ).exists():
-            ShoppingCart.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'error': 'Этого рецепта нет в избранном'},
-            status=status.HTTP_400_BAD_REQUEST
+        ).delete()
+        if not delete_cnt:
+            return Response(
+                {'ValidationError': 'Этого рецепта нет в списке покупок'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @staticmethod
+    def save_file(list_for_print):
+        """Сохранение списка покупок в файл."""
+        list_name = 'Список покупок.'
+        for item in list_for_print:
+            ingredient = Ingredient.objects.get(pk=item['ingredient'])
+            amount = item['amount']
+            list_name += (
+                f'{ingredient.name}, {amount} '
+                f'{ingredient.measurement_unit}\n'
+            )
+        response = HttpResponse(list_name, content_type='text/plain')
+        response['Content-Disposition'] = (
+            'attachment; filename=shopping_list.txt'
         )
 
     @action(
@@ -130,7 +147,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(
             amount=Sum('amount')
         )
-        return save_file(shopping_list)
+        return self.save_file(shopping_list)
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -151,20 +168,3 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = (AdminOrReadOnly, )
     pagination_class = None
-
-
-def save_file(list_for_print):
-    """Сохранение списка покупок в файл."""
-    list_name = 'Список покупок.'
-    for item in list_for_print:
-        ingredient = Ingredient.objects.get(pk=item['ingredient'])
-        amount = item['amount']
-        list_name += (
-            f'{ingredient.name}, {amount} '
-            f'{ingredient.measurement_unit}\n'
-        )
-    response = HttpResponse(list_name, content_type='text/plain')
-    response['Content-Disposition'] = (
-        'attachment; filename=shopping_list.txt'
-    )
-    return response

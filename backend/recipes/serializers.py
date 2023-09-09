@@ -1,4 +1,3 @@
-from django.core import validators
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -53,22 +52,8 @@ class IngredientRecipeShortSerializer(serializers.ModelSerializer):
         source='ingredient',
     )
     amount = serializers.IntegerField(
-        validators=(
-            validators.MinValueValidator(
-                constants.MIN_VALUE,
-                message=(
-                    'Количество ингридиента не может быть меньше',
-                    f'{constants.MIN_VALUE}!'
-                )
-            ),
-            validators.MaxValueValidator(
-                constants.MAX_VALUE,
-                message=(
-                    'Количество ингридиента не может быть больше',
-                    f'{constants.MAX_VALUE}!'
-                )
-            ),
-        )
+        max_value=constants.MAX_INGREDIENT_VALUE,
+        min_value=constants.MIN_INGREDIENT_VALUE
     )
 
     class Meta:
@@ -107,17 +92,15 @@ class RecipeListSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         """Получение информации находится ли рецепт в избранном."""
         user = self.context['request'].user
-        if user.is_authenticated:
+        if user and user.is_authenticated:
             return user.favorites.filter(recipe=obj).exists()
-        return False
 
     def get_is_in_shopping_cart(self, obj):
         """Получение информации находится ли рецепт в
         списке покупок."""
         user = self.context['request'].user
-        if user.is_authenticated:
+        if user and user.is_authenticated:
             return user.shopping_cart.filter(recipe=obj).exists()
-        return False
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -146,13 +129,14 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Валидация полей Ингридиент и Тег."""
-        print(data)
-        if not data['ingredients']:
+        if not data.get('ingredients'):
             raise ValidationError(
                 'Необходимо добавить ингридиенты!'
             )
-        elif not data['tags']:
+        elif not data.get('tags'):
             raise ValidationError('Необходимо добавить тег!')
+        elif not data.get('image'):
+            raise ValidationError('Необходимо добавить фото!')
 
         ingredients_list = [item['ingredient'].id
                             for item in data['ingredients']]

@@ -10,11 +10,11 @@ class Ingredient(models.Model):
     """Модель Ингредиенты."""
 
     name = models.CharField(
-        max_length=constants.MAX_LENGTH_1,
+        max_length=constants.MAX_LENGTH_FIELD_RECIPE_MODELS,
         verbose_name='Название ингридиента'
     )
     measurement_unit = models.CharField(
-        max_length=constants.MAX_LENGTH_1,
+        max_length=constants.MAX_LENGTH_FIELD_RECIPE_MODELS,
         verbose_name='Единицы измерения'
     )
 
@@ -36,17 +36,16 @@ class Tag(models.Model):
     """Модель Тэг."""
 
     name = models.CharField(
-        max_length=constants.MAX_LENGTH_1,
+        max_length=constants.MAX_LENGTH_FIELD_RECIPE_MODELS,
         unique=True,
         verbose_name='Название тега'
     )
     color = ColorField(
-        max_length=constants.MAX_LENGTH_2,
         unique=True,
         verbose_name='Цветовой HEX-код'
     )
     slug = models.SlugField(
-        max_length=constants.MAX_LENGTH_1,
+        max_length=constants.MAX_LENGTH_FIELD_RECIPE_MODELS,
         unique=True,
         verbose_name='Слаг'
     )
@@ -70,7 +69,7 @@ class Recipe(models.Model):
         verbose_name='Автор публикации'
     )
     name = models.CharField(
-        max_length=constants.MAX_LENGTH_1,
+        max_length=constants.MAX_LENGTH_FIELD_RECIPE_MODELS,
         verbose_name='Название рецепта'
     )
     image = models.ImageField(
@@ -98,10 +97,10 @@ class Recipe(models.Model):
         verbose_name='Время приготовления блюда, мин.',
         validators=[
             validators.MinValueValidator(
-                constants.MIN_VALUE,
+                constants.MIN_TIME_COOK,
                 message=(
                     'Время приготовления должно быть не меньше',
-                    f'{constants.MIN_VALUE}!'
+                    f'{constants.MIN_TIME_COOK}!'
                 )
             ),
             validators.MaxValueValidator(
@@ -143,17 +142,17 @@ class IngredientRecipe(models.Model):
     amount = models.PositiveSmallIntegerField(
         validators=[
             validators.MinValueValidator(
-                constants.MIN_VALUE,
+                constants.MIN_INGREDIENT_VALUE,
                 message=(
                     'Количество ингридиента не может быть меньше',
-                    f'{constants.MIN_VALUE}!'
+                    f'{constants.MIN_INGREDIENT_VALUE}!'
                 )
             ),
             validators.MaxValueValidator(
-                constants.MAX_VALUE,
+                constants.MAX_INGREDIENT_VALUE,
                 message=(
                     'Количество ингридиента не может быть больше',
-                    f'{constants.MAX_VALUE}!'
+                    f'{constants.MAX_INGREDIENT_VALUE}!'
                 )
             ),
         ]

@@ -29,14 +29,14 @@ class RecipeFilter(filters.FilterSet):
         """Фильтрация по отметке "в избранном"."""
         user = self.request.user
         if value:
-            return queryset.filter(favorites__user=user)
+            return queryset.filter(favorites__user_id=user.pk)
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         """Фильтрация по отметке "в списке покупок"."""
         user = self.request.user
         if value:
-            return queryset.filter(shopping_cart__user=user)
+            return queryset.filter(shopping_cart__user_id=user.pk)
         return queryset
 
 

@@ -37,50 +37,38 @@ class CustomUserViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @staticmethod
-    def custom_create(serializer_create, serializer_show, pk, request):
-        following = get_object_or_404(User, id=pk)
-        data = {'user': request.user.id, 'following': following.id}
-        serializer = serializer_create(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            serializer_show = serializer_show(
-                following, context={'request': request}
-            )
-            return Response(
-                serializer_show.data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    # SubscriptionCreateSerializer основан на модели Subscription,
+    # SubscriptionSerializer основан на модели User - для отображения
+    # подписок согласно документации
     @action(
         detail=True,
         methods=('post',),
         permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, id=None):
-        """Подписка/отписка от автора."""
-        return self.custom_create(
-            SubscriptionCreateSerializer,
-            SubscriptionSerializer,
-            id,
-            request
+        """Подписка на автора."""
+        following = get_object_or_404(User, id=id)
+        data = {'user': request.user.id, 'following': following.id}
+        serializer = SubscriptionCreateSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        serializer = SubscriptionSerializer(
+            following,
+            context={'request': request}
         )
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
     def delete_subscribe(self, request, id=None):
-        """Удаление рецепта из избранного."""
+        """Отписка от автора."""
         following = get_object_or_404(User, id=id)
-        if Subscription.objects.filter(
+        delete_cnt, _ = Subscription.objects.filter(
             user=request.user,
             following=following
-        ).exists():
-            Subscription.objects.filter(
-                user=request.user,
-                following=following
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {'error': 'Вы не подписаны на этого пользователя'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        ).delete()
+        if not delete_cnt:
+            return Response(
+                {'ValidationError': 'Вы не подписаны на этого пользователя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)

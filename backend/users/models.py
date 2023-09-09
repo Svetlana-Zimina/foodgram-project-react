@@ -12,12 +12,12 @@ class User(AbstractUser):
     """Кастомная модель Пользователя."""
 
     email = models.EmailField(
-        max_length=constants.MAX_LENGTH_3,
+        max_length=constants.MAX_LENGTH_EMAILFIELD,
         unique=True,
         verbose_name='Адрес электронной почты'
     )
     username = models.CharField(
-        max_length=constants.MAX_LENGTH_4,
+        max_length=constants.MAX_LENGTH_FIELD_USER_MODELS,
         unique=True,
         verbose_name='Имя пользователя',
         validators=[
@@ -26,15 +26,15 @@ class User(AbstractUser):
         ],
     )
     first_name = models.CharField(
-        max_length=constants.MAX_LENGTH_4,
+        max_length=constants.MAX_LENGTH_FIELD_USER_MODELS,
         verbose_name='Имя'
     )
     last_name = models.CharField(
-        max_length=constants.MAX_LENGTH_4,
+        max_length=constants.MAX_LENGTH_FIELD_USER_MODELS,
         verbose_name='Фамилия'
     )
     password = models.CharField(
-        max_length=constants.MAX_LENGTH_4,
+        max_length=constants.MAX_LENGTH_FIELD_USER_MODELS,
         verbose_name='Пароль'
     )
 

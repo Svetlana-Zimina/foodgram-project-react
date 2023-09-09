@@ -11,8 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
-DEBUG = os.getenv('DEBUG', False) == True
-
+#DEBUG = os.getenv('DEBUG', False) == True
+DEBUG = True
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
 INSTALLED_APPS = [
@@ -67,7 +67,9 @@ WSGI_APPLICATION = 'foodgram_backend.wsgi.application'
 
 # Database
 
-if os.getenv('DATABASE_ENV')=='dev':
+DB_SQLITE = os.getenv('DB_SQLITE')
+
+if DB_SQLITE == 'dev':
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",

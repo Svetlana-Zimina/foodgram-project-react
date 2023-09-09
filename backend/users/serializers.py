@@ -24,10 +24,9 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         """Отметка подписан ли текущий пользователь на автора."""
-        request = self.context['request']
-        if request.user.is_authenticated:
-            return request.user.following.filter(user=obj).exists()
-        return False
+        user = self.context['request'].user
+        if user and user.is_authenticated:
+            return user.following.filter(user=obj).exists()
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -44,7 +43,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(CustomUserSerializer):
-    """Сериализатор для модели Подписки."""
+    """Сериализатор для отображения модели Подписки."""
 
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -65,7 +64,11 @@ class SubscriptionSerializer(CustomUserSerializer):
         limit = request.GET.get('recipes_limit')
         recipes = obj.recipes.all()
         if limit:
-            recipes = recipes[:int(limit)]
+            try:
+                recipes = recipes[:int(limit)]
+            except TypeError:
+                return ('В параметр limit нужно передать целое число.',
+                        f'Передано: {type(limit)}')
         return RecipeShortSerializer(recipes, many=True, read_only=True).data
 
     def get_recipes_count(self, obj):
@@ -91,7 +94,7 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        """Пррверка, что пользователь не подписывается на самого себя."""
+        """Проверка, что пользователь не подписывается на самого себя."""
         if data['user'] == data['following']:
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя!'
