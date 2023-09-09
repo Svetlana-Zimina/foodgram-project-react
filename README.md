@@ -3,9 +3,9 @@
 ### Адрес сервера
 https://tastyfoodgram.hopto.org/
 
-Логин администратора: admin
-Электронная почта: admin@yandex.ru
-Пароль администратора: adminsveta
+Логин администратора: review
+Электронная почта: review@admin.ru
+Пароль администратора: review1admin
 
 
 ### Описание
