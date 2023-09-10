@@ -28,7 +28,7 @@ class CustomUserSerializer(UserSerializer):
         return bool(
             request
             and request.user.is_authenticated
-            and request.user.following.filter(recipe=obj).exists()
+            and request.user.follower.filter(following=obj).exists()
         )
 
 
