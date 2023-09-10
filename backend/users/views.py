@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -37,9 +38,6 @@ class CustomUserViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    # SubscriptionCreateSerializer основан на модели Subscription,
-    # SubscriptionSerializer основан на модели User - для отображения
-    # подписок согласно документации
     @action(
         detail=True,
         methods=('post',),
@@ -67,8 +65,7 @@ class CustomUserViewSet(UserViewSet):
             following=following
         ).delete()
         if not delete_cnt:
-            return Response(
-                {'ValidationError': 'Вы не подписаны на этого пользователя'},
-                status=status.HTTP_400_BAD_REQUEST
+            return ValidationError(
+                'Вы не подписаны на этого пользователя!'
             )
         return Response(status=status.HTTP_204_NO_CONTENT)

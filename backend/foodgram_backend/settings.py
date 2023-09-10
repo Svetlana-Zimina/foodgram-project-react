@@ -13,7 +13,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', False) == True
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost, 127.0.0.1').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -127,7 +127,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'backend_static/static'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / '/media'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_URLS_REGEX = r'^/api/.*$'

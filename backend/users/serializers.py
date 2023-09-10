@@ -24,9 +24,12 @@ class CustomUserSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         """Отметка подписан ли текущий пользователь на автора."""
-        user = self.context['request'].user
-        if user and user.is_authenticated:
-            return user.following.filter(user=obj).exists()
+        request = self.context['request']
+        return bool(
+            request
+            and request.user.is_authenticated
+            and request.user.following.filter(recipe=obj).exists()
+        )
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -66,9 +69,8 @@ class SubscriptionSerializer(CustomUserSerializer):
         if limit:
             try:
                 recipes = recipes[:int(limit)]
-            except TypeError:
-                return ('В параметр limit нужно передать целое число.',
-                        f'Передано: {type(limit)}')
+            except ValueError:
+                pass
         return RecipeShortSerializer(recipes, many=True, read_only=True).data
 
     def get_recipes_count(self, obj):

@@ -91,16 +91,22 @@ class RecipeListSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         """Получение информации находится ли рецепт в избранном."""
-        user = self.context['request'].user
-        if user and user.is_authenticated:
-            return user.favorites.filter(recipe=obj).exists()
+        request = self.context['request']
+        return bool(
+            request
+            and request.user.is_authenticated
+            and request.user.favorites.filter(recipe=obj).exists()
+        )
 
     def get_is_in_shopping_cart(self, obj):
         """Получение информации находится ли рецепт в
         списке покупок."""
-        user = self.context['request'].user
-        if user and user.is_authenticated:
-            return user.shopping_cart.filter(recipe=obj).exists()
+        request = self.context['request']
+        return bool(
+            request
+            and request.user.is_authenticated
+            and request.user.shopping_cart.filter(recipe=obj).exists()
+        )
 
 
 class RecipeSerializer(serializers.ModelSerializer):
